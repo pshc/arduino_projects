@@ -33,7 +33,7 @@
 # $Id$
 
 TARGET = main
-USER_SRC = main.c
+USER_SRC = main.c clockdisplay.c
 
 PORT = /dev/ttyUSB*
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
