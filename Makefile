@@ -1,24 +1,9 @@
 ## Modified by mark hellewell <mark.hellewell@gmail.com>
+## Modified further by Paul Collier <paching@gmail.com>
 # Arduino makefile
 #
 # This makefile allows you to build sketches from the command line
 # without the Arduino environment (or Java).
-#
-# The Arduino environment does preliminary processing on a sketch before
-# compiling it.  If you're using this makefile instead, you'll need to do
-# a few things differently:
-#
-#   - Give your program's file a .cpp extension (e.g. foo.cpp).
-#
-#   - Put this line at top of your code: #include <WProgram.h>
-#
-#   - Write prototypes for all your functions (or define them before you
-#     call them).  A prototype declares the types of parameters a
-#     function will take and what type of value it will return.  This
-#     means that you can have a call to a function before the definition
-#     of the function.  A function prototype looks like the first line of
-#     the function, with a semi-colon at the end.  For example:
-#     int digitalRead(int pin);
 #
 # Instructions for using the makefile:
 #
@@ -26,6 +11,7 @@
 #
 #  2. Below, modify the line containing "TARGET" to refer to the name of
 #     of your program's file without an extension (e.g. TARGET = foo).
+#     Use "USER_SRC" to list your project's source files.
 #
 #  3. Modify the line containg "ARDUINO" to point the directory that
 #     contains the Arduino core (for normal Arduino installations, this
@@ -46,8 +32,10 @@
 #
 # $Id$
 
-PORT = /dev/ttyUSB*
 TARGET = main
+USER_SRC = main.c
+
+PORT = /dev/ttyUSB*
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 
 C_MODULES =  \
@@ -60,17 +48,8 @@ $(ARDUINO)/WInterrupts.c \
 $(ARDUINO)/wiring_shift.c \
 # end of C_MODULES
 
-CXX_MODULES = \
-$(ARDUINO)/Tone.cpp \
-$(ARDUINO)/main.cpp \
-$(ARDUINO)/WMath.cpp \
-$(ARDUINO)/Print.cpp \
-$(ARDUINO)/HardwareSerial.cpp \
-# end of CXX_MODULES
-
-MODULES = $(C_MODULES) $(CXX_MODULES)
-SRC = $(C_MODULES)
-CXXSRC = $(CXX_MODULES) $(TARGET).cpp
+MODULES = $(C_MODULES)
+SRC = $(C_MODULES) $(USER_SRC)
 
 MCU = atmega328p
 F_CPU = 16000000
@@ -89,11 +68,9 @@ OPT = s
 
 # Place -D or -U options here
 CDEFS = -DF_CPU=$(F_CPU)
-CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
 CINCS = -I$(ARDUINO)
-CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
 # c89   - "ANSI" C
@@ -107,7 +84,6 @@ CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
 CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
-CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT)
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
 LDFLAGS = 
 
@@ -122,7 +98,6 @@ AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 
 # Program settings
 CC = avr-gcc
-CXX = avr-g++
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
@@ -132,15 +107,14 @@ REMOVE = rm -f
 MV = mv -f
 
 # Define all object files.
-OBJ = $(SRC:.c=.o) $(CXXSRC:.cpp=.o) $(ASRC:.S=.o)
+OBJ = $(SRC:.c=.o) $(ASRC:.S=.o)
 
 # Define all listing files.
-LST = $(ASRC:.S=.lst) $(CXXSRC:.cpp=.lst) $(SRC:.c=.lst)
+LST = $(ASRC:.S=.lst) $(SRC:.c=.lst)
 
 # Combine all necessary flags and optional flags.
 # Add target processor to flags.
 ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS)
-ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS)
 ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
@@ -202,10 +176,6 @@ $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
 
 
-# Compile: create object files from C++ source files.
-.cpp.o:
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
-
 # Compile: create object files from C source files.
 .c.o:
 	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
@@ -226,7 +196,7 @@ $(TARGET).elf: $(OBJ)
 clean:
 	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
 	$(TARGET).map $(TARGET).sym $(TARGET).lss \
-	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
+	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d)
 
 depend:
 	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \
