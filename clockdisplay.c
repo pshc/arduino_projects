@@ -1,6 +1,9 @@
 #include <WProgram.h>
 #include "clockdisplay.h"
 
+/* Use pin 2 for interrupts instead */
+#define LED_PIN(x) ((x) == 2 ? led_pins : (x) + led_base)
+
 static const int led_base = 0, led_pins = 7, col_base = 8, col_pins = 4;
 // LEDs: t tr br b   bl tl m _
 static const unsigned char digits[11] = {
@@ -11,7 +14,7 @@ static void cdisp_digit(unsigned char d) {
 	d = digits[d];
 	for (i = 1; i <= led_pins; i++) {
 		d >>= 1;
-		digitalWrite(led_base + led_pins - i, d & 1 ? HIGH : LOW);
+		digitalWrite(LED_PIN(led_pins - i), d & 1 ? HIGH : LOW);
 	}
 }
 
@@ -41,8 +44,9 @@ void cdisp_number(unsigned short num, int msec) {
 
 void cdisp_setup(void) {
 	int i;
-	for (i = led_base; i < led_base+led_pins; i++)
-		pinMode(i, OUTPUT);
+	pinMode(2, INPUT);
+	for (i = 0; i < led_pins; i++)
+		pinMode(LED_PIN(i), OUTPUT);
 	for (i = col_base; i < col_base+col_pins; i++) {
 		pinMode(i, OUTPUT);
 		digitalWrite(i, HIGH);
